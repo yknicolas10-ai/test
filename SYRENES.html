@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SYRÈNES — SODEXAM | Système de Reporting et Notification d'Événements de Sécurité</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F1EFE8;color:#2C2C2A;min-height:100vh;font-size:14px}
+
+/* NAV */
+nav{background:#042C53;display:flex;align-items:center;padding:0 24px;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.nav-logo{color:#fff;font-size:17px;font-weight:700;letter-spacing:.8px;margin-right:36px;display:flex;align-items:center;gap:10px}
+.nav-logo svg{flex-shrink:0}
+.nav-tabs{display:flex;height:100%;gap:2px}
+.nav-tab{color:rgba(255,255,255,.65);padding:0 18px;cursor:pointer;font-size:13px;font-weight:500;border:none;background:none;border-bottom:3px solid transparent;display:flex;align-items:center;transition:all .2s}
+.nav-tab:hover{color:#fff;background:rgba(255,255,255,.08)}
+.nav-tab.active{color:#fff;border-bottom-color:#fff}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.badge-site{background:rgba(255,255,255,.15);color:#fff;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.5px}
+.live-pill{display:flex;align-items:center;gap:5px;color:rgba(255,255,255,.7);font-size:11px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#639922;animation:pulse 1.5s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* LAYOUT */
+.page{display:none;padding:28px;max-width:1280px;margin:0 auto}
+.page.active{display:block}
+.page-header{margin-bottom:24px}
+.page-title{font-size:20px;font-weight:600;margin-bottom:4px}
+.page-sub{font-size:13px;color:#5F5E5A}
+
+/* CARDS */
+.card{background:#fff;border:1px solid #D3D1C7;border-radius:12px;padding:22px;margin-bottom:18px}
+.card-title{font-size:13px;font-weight:600;margin-bottom:18px;color:#2C2C2A;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.5px}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+
+/* STAT CARDS */
+.stat{background:#F1EFE8;border-radius:10px;padding:16px 18px;border:1px solid #D3D1C7}
+.stat-label{font-size:11px;color:#5F5E5A;margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.stat-value{font-size:28px;font-weight:700;line-height:1}
+.stat-sub{font-size:11px;color:#888780;margin-top:6px}
+
+/* FORM */
+label.field-label{font-size:12px;color:#5F5E5A;display:block;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+input[type=text],input[type=date],input[type=time],select,textarea{width:100%;border:1px solid #B4B2A9;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;color:#2C2C2A;background:#fff;outline:none;transition:border .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.12)}
+textarea{resize:vertical;min-height:72px;line-height:1.5}
+.form-group{margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+/* BUTTONS */
+.btn{padding:9px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid;transition:all .15s;font-family:inherit}
+.btn-primary{background:#185FA5;color:#fff;border-color:#185FA5}
+.btn-primary:hover{background:#0C447C;border-color:#0C447C}
+.btn-ghost{background:#fff;color:#2C2C2A;border-color:#B4B2A9}
+.btn-ghost:hover{background:#F1EFE8}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:6px}
+.btn-export{background:#fff;color:#2C2C2A;border:1px solid #B4B2A9;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-export:hover{background:#F1EFE8}
+
+/* SEVERITY */
+.sev{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
+.sev::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+.sev.grave{background:#FCEBEB;color:#791F1F}
+.sev.acceptable{background:#FAEEDA;color:#633806}
+.sev.tolerable{background:#EAF3DE;color:#27500A}
+
+/* RADIO GRAVITÉ */
+.grav-options{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
+.grav-opt{display:flex;align-items:center;gap:7px;cursor:pointer;padding:8px 14px;border-radius:8px;border:1.5px solid #D3D1C7;background:#fff;transition:all .2s;user-select:none}
+.grav-opt input{position:absolute;opacity:0;width:0;height:0}
+.grav-opt:has(input:checked){border-color:currentColor}
+.grav-opt.grave{color:#791F1F}
+.grav-opt.grave:has(input:checked){background:#FCEBEB;border-color:#A32D2D}
+.grav-opt.acceptable{color:#633806}
+.grav-opt.acceptable:has(input:checked){background:#FAEEDA;border-color:#854F0B}
+.grav-opt.tolerable{color:#27500A}
+.grav-opt.tolerable:has(input:checked){background:#EAF3DE;border-color:#3B6D11}
+.grav-dot{width:10px;height:10px;border-radius:50%;background:currentColor;flex-shrink:0}
+.grav-label{font-size:13px;font-weight:600}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 14px;font-size:11px;font-weight:700;color:#5F5E5A;border-bottom:2px solid #D3D1C7;text-transform:uppercase;letter-spacing:.5px;background:#F8F7F4}
+td{padding:11px 14px;border-bottom:1px solid #EDE9E3;vertical-align:middle}
+tr:hover td{background:#F8F7F4}
+.link-btn{color:#185FA5;cursor:pointer;font-weight:600;background:none;border:none;font-size:12px;font-family:inherit;padding:4px 8px;border-radius:6px;transition:background .15s}
+.link-btn:hover{background:#E6F1FB}
+.cat-badge{display:inline-block;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;background:#F1EFE8;color:#444441;border:1px solid #D3D1C7}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.filter-bar select,.filter-bar input{flex:1;min-width:140px;margin-bottom:0}
+.filter-bar .filter-label{font-size:11px;font-weight:600;color:#5F5E5A;white-space:nowrap}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed #B4B2A9;border-radius:8px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;color:#888780;font-size:13px}
+.upload-zone:hover{border-color:#185FA5;background:#EBF3FB;color:#185FA5}
+.file-name{font-size:12px;color:#185FA5;margin-top:8px;display:none;font-weight:600}
+
+/* TABS */
+.tab-bar{display:flex;gap:0;border-bottom:2px solid #D3D1C7;margin-bottom:22px}
+.tab-btn{padding:10px 20px;font-size:13px;cursor:pointer;color:#888780;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none;font-weight:600;transition:all .2s;font-family:inherit}
+.tab-btn:hover{color:#2C2C2A}
+.tab-btn.active{color:#185FA5;border-bottom-color:#185FA5}
+
+/* SITE GRID */
+.site-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.site-card{background:#fff;border:1.5px solid #D3D1C7;border-radius:10px;padding:16px;cursor:pointer;transition:all .18s}
+.site-card:hover{border-color:#185FA5;box-shadow:0 2px 12px rgba(24,95,165,.12);transform:translateY(-1px)}
+.site-name{font-size:12px;font-weight:700;color:#444441;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.site-count{font-size:28px;font-weight:700;margin-bottom:2px}
+.site-sub{font-size:11px;color:#888780;margin-bottom:10px}
+.site-bar{height:5px;border-radius:3px;background:#D3D1C7}
+.site-bar-fill{height:100%;border-radius:3px;transition:width .5s}
+
+/* BAR CHARTS */
+.bar-wrap{margin-bottom:12px}
+.bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;color:#444441}
+.bar-track{height:10px;background:#F1EFE8;border-radius:5px;overflow:hidden;border:1px solid #D3D1C7}
+.bar-fill{height:100%;border-radius:5px;transition:width .6s}
+
+/* NOTIF */
+.notif{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid #EDE9E3}
+.notif:last-child{border-bottom:none}
+.notif-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.notif-dot.grave{background:#E24B4A}
+.notif-dot.acceptable{background:#EF9F27}
+.notif-dot.tolerable{background:#639922}
+.notif-title{font-size:13px;font-weight:500;margin-bottom:3px}
+.notif-meta{font-size:11px;color:#888780;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ALERT CARD */
+.alert-grave{padding:14px;background:#FFF5F5;border-radius:8px;margin-bottom:10px;border-left:4px solid #E24B4A;border:1px solid #F7C1C1;border-left:4px solid #E24B4A}
+.alert-title{font-size:13px;font-weight:600;color:#791F1F;margin-bottom:4px}
+.alert-meta{font-size:11px;color:#A32D2D;margin-bottom:8px}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:min(680px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:22px 28px;border-bottom:1px solid #EDE9E3;position:sticky;top:0;background:#fff;z-index:1;border-radius:14px 14px 0 0}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{background:none;border:none;cursor:pointer;font-size:22px;color:#888780;padding:4px 8px;border-radius:6px;line-height:1}
+.modal-close:hover{background:#F1EFE8}
+.modal-body{padding:22px 28px}
+.modal-footer{padding:16px 28px;border-top:1px solid #EDE9E3;display:flex;justify-content:flex-end;gap:10px}
+.detail-row{display:flex;padding:11px 0;border-bottom:1px solid #F1EFE8;font-size:13px}
+.detail-row:last-child{border-bottom:none}
+.detail-key{width:180px;flex-shrink:0;color:#5F5E5A;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px;padding-top:1px}
+.detail-val{flex:1}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;right:28px;background:#27500A;color:#fff;padding:14px 22px;border-radius:12px;font-size:13px;display:none;z-index:1000;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.25);font-weight:500}
+.toast.show{display:flex}
+
+/* TREND CHART */
+.chart-wrap{position:relative;height:200px;margin-top:8px}
+.chart-wrap canvas{width:100%!important;height:200px!important}
+
+/* GUIDE ITEMS */
+.guide-item{padding:9px 12px;background:#F8F7F4;border-radius:7px;border-left:3px solid;margin-bottom:7px;font-size:12px;line-height:1.5}
+.guide-item strong{display:block;margin-bottom:2px;font-size:12px}
+
+/* CAT COLORS */
+.cc-0{color:#185FA5}.cc-1{color:#0F6E56}.cc-2{color:#854F0B}.cc-3{color:#A32D2D}.cc-4{color:#534AB7}.cc-5{color:#3C3489}.cc-6{color:#993C1D}.cc-7{color:#5F5E5A}
+
+/* SECTION HEADER */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+
+/* WATERMARK / PAGE TITLE */
+.page-badge{display:inline-flex;align-items:center;gap:6px;background:#E6F1FB;color:#0C447C;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+
+/* REQUIRED STAR */
+.req{color:#A32D2D}
+
+/* REF PILL */
+.ref-pill{background:#E6F1FB;color:#0C447C;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;font-family:monospace}
+
+@media(max-width:700px){
+  .grid-2,.grid-3,.grid-4,.form-row,.form-row-3{grid-template-columns:1fr}
+  .site-grid{grid-template-columns:repeat(2,1fr)}
+  .nav-tabs{display:none}
+  .nav-right{display:none}
+  .page{padding:16px}
+  .modal{width:100vw;max-height:100vh;border-radius:0}
+}
+
+/* PRINT */
+@media print{
+  nav{display:none}
+  .page{display:block!important;padding:10px}
+  .btn,.filter-bar,.tab-btn{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+  <div class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="white" stroke-width="1.8"/>
+      <path d="M12 7v5l3.5 2" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="12" cy="12" r="2.5" fill="white" opacity=".3"/>
+    </svg>
+    SYRÈNES
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('reporting',this)">Signaler un événement</button>
+    <button class="nav-tab" onclick="showPage('suivi',this)">Suivi des reportings</button>
+    <button class="nav-tab" onclick="showPage('backoffice',this)">Back office — Direction</button>
+  </div>
+  <div class="nav-right">
+    <div class="live-pill"><span class="live-dot"></span>En direct</div>
+    <span class="badge-site">SODEXAM</span>
+  </div>
+</nav>
+
+<!-- ===================== PAGE 1: SIGNALEMENT ===================== -->
+<div class="page active" id="page-reporting">
+  <div class="section-hdr">
+    <div>
+      <div class="page-badge">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/><line x1="3.5" y1="4.5" x2="8.5" y2="4.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><line x1="3.5" y1="7" x2="6.5" y2="7" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+        Notification d'événement
+      </div>
+      <div class="page-title">Signalement d'un événement</div>
+      <div class="page-sub">Remplissez le formulaire ci-dessous pour notifier un événement de sécurité ou technique</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="align-items:start">
+    <!-- FORMULAIRE -->
+    <div>
+      <div class="card">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><line x1="4" y1="5" x2="10" y2="5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="4" y1="7.5" x2="8" y2="7.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="4" y1="10" x2="6" y2="10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Identification de l'événement
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="field-label">Plateforme / Site <span class="req">*</span></label>
+            <select id="f-site">
+              <option value="">— Sélectionner un site —</option>
+              <option>ABIDJAN</option><option>ADIAKE</option><option>BOUAKE</option>
+              <option>BONDOUKOU</option><option>DALOA</option><option>DIMBOKRO</option>
+              <option>GAGNOA</option><option>KORHOGO</option><option>MAN</option>
+              <option>ODIENNE</option><option>SAN PEDRO</option><option>SASSANDRA</option>
+              <option>TABOU</option><option>YAMOUSSOUKRO</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="field-label">Catégorie d'événement <span class="req">*</span></label>
+            <select id="f-type">
+              <option value="">— Sélectionner —</option>
+              <option>Infrastructure / Bâtiment</option>
+              <option>Installation technique</option>
+              <option>Équipement opérationnel</option>
+              <option>Incident de sécurité ou de sûreté</option>
+              <option>Non-conformité technique</option>
+              <option>Défaillance de maintenance</option>
+              <option>Accident / Incident</option>
+              <option>Documentation</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="field-label">Date <span class="req">*</span></label>
+            <input type="date" id="f-date">
+          </div>
+          <div class="form-group">
+            <label class="field-label">Heure <span class="req">*</span></label>
+            <input type="time" id="f-heure">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Localisation précise <span class="req">*</span></label>
+          <input type="text" id="f-lieu" placeholder="Ex : Bâtiment B, salle des équipements, 2e étage">
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Service ou entité concerné(e)</label>
+          <input type="text" id="f-service" placeholder="Ex : Service météorologie, maintenance, direction...">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><line x1="7" y1="5" x2="7" y2="9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="3.5" r=".7" fill="currentColor"/></svg>
+          Description et analyse
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Description détaillée <span class="req">*</span></label>
+          <textarea id="f-desc" rows="3" placeholder="Décrivez précisément l'événement observé : nature, contexte, éléments constatés..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="field-label">Conséquence / Impact</label>
+            <textarea id="f-impact" rows="2" placeholder="Impacts observés ou potentiels sur les activités, équipements, personnes..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="field-label">Causes probables ou constatées</label>
+            <textarea id="f-causes" rows="2" placeholder="Causes identifiées ou supposées de l'événement..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Mesures immédiates prises</label>
+          <textarea id="f-mesures" rows="2" placeholder="Actions correctives ou préventives déjà engagées..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Niveau de gravité <span class="req">*</span></label>
+          <div class="grav-options">
+            <label class="grav-opt tolerable">
+              <input type="radio" name="gravite" value="tolerable">
+              <span class="grav-dot"></span>
+              <span class="grav-label">Tolérable</span>
+            </label>
+            <label class="grav-opt acceptable">
+              <input type="radio" name="gravite" value="acceptable">
+              <span class="grav-dot"></span>
+              <span class="grav-label">Acceptable</span>
+            </label>
+            <label class="grav-opt grave">
+              <input type="radio" name="gravite" value="grave">
+              <span class="grav-dot"></span>
+              <span class="grav-label">Grave</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Image(s) — optionnel</label>
+          <div class="upload-zone" onclick="document.getElementById('f-img').click()">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style="margin:0 auto 8px;display:block;opacity:.5"><rect x="3" y="7" width="22" height="17" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="14" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M3 21l5-5 4 4 4-5 9 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 3l3 3-3 3M20 6H14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <strong>Cliquez pour joindre une image</strong><br>
+            <span style="font-size:12px;opacity:.7;margin-top:4px;display:block">PNG, JPG, JPEG, PDF — maximum 10 Mo</span>
+          </div>
+          <input type="file" id="f-img" accept="image/*,.pdf" style="display:none" onchange="showFile(this)">
+          <div class="file-name" id="file-name">📎 <span id="file-name-text"></span></div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px">
+          <button class="btn btn-ghost" onclick="resetForm()">Réinitialiser</button>
+          <button class="btn btn-primary" onclick="submitEvent()">
+            Soumettre le signalement &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GUIDE -->
+    <div>
+      <div class="card">
+        <div class="card-title">Guide des catégories d'événements</div>
+        <div class="guide-item" style="border-color:#185FA5"><strong class="cc-0">Infrastructure / Bâtiment</strong>Dégradation structurelle, fissure, infiltration d'eau, problème de toiture, clôture endommagée, revêtement de sol</div>
+        <div class="guide-item" style="border-color:#0F6E56"><strong class="cc-1">Installation technique</strong>Réseau électrique BT/HT, climatisation, groupe électrogène, plomberie, éclairage, système incendie</div>
+        <div class="guide-item" style="border-color:#854F0B"><strong class="cc-2">Équipement opérationnel</strong>Stations météo, capteurs, anémomètres, pluviomètres, instruments de mesure, serveurs</div>
+        <div class="guide-item" style="border-color:#A32D2D"><strong class="cc-3">Incident de sécurité ou de sûreté</strong>Intrusion, vol, vandalisme, menace, agression, accident de personne, incendie, inondation</div>
+        <div class="guide-item" style="border-color:#534AB7"><strong class="cc-4">Non-conformité technique</strong>Écart aux normes OMM, réglementations non respectées, étalonnage hors délai, procédures non suivies</div>
+        <div class="guide-item" style="border-color:#3C3489"><strong class="cc-5">Défaillance de maintenance</strong>Retard d'entretien préventif, panne prévisible non traitée, absence de maintenance planifiée</div>
+        <div class="guide-item" style="border-color:#993C1D"><strong class="cc-6">Accident / Incident</strong>Accident corporel, incident opérationnel grave, collision véhicule, blessure au travail, near-miss</div>
+        <div class="guide-item" style="border-color:#5F5E5A"><strong class="cc-7">Documentation</strong>Documents manquants, registres non à jour, main courante non tenue, rapports non soumis</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Niveaux de gravité</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="padding:10px 14px;border-radius:8px;background:#EAF3DE;border:1px solid #C0DD97">
+            <div style="font-weight:700;color:#27500A;font-size:13px;margin-bottom:3px">🟢 Tolérable</div>
+            <div style="font-size:12px;color:#3B6D11">Événement mineur sans impact significatif sur les opérations. Suivi standard, aucune action d'urgence requise.</div>
+          </div>
+          <div style="padding:10px 14px;border-radius:8px;background:#FAEEDA;border:1px solid #FAC775">
+            <div style="font-weight:700;color:#633806;font-size:13px;margin-bottom:3px">🟡 Acceptable</div>
+            <div style="font-size:12px;color:#854F0B">Événement avec impact modéré nécessitant une action corrective dans un délai raisonnable. Traitement sous 5 jours ouvrés.</div>
+          </div>
+          <div style="padding:10px 14px;border-radius:8px;background:#FCEBEB;border:1px solid #F7C1C1">
+            <div style="font-weight:700;color:#791F1F;font-size:13px;margin-bottom:3px">🔴 Grave</div>
+            <div style="font-size:12px;color:#A32D2D">Événement critique affectant la sécurité, la continuité opérationnelle ou la conformité réglementaire. Action immédiate requise sous 24h.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PAGE 2: SUIVI ===================== -->
+<div class="page" id="page-suivi">
+  <div class="section-hdr">
+    <div>
+      <div class="page-badge">Suivi opérationnel</div>
+      <div class="page-title">Suivi des reportings</div>
+      <div class="page-sub">Consulter, filtrer et suivre en temps réel tous les événements signalés</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#5F5E5A">
+      <span class="live-dot"></span> Mise à jour automatique
+    </div>
+  </div>
+
+  <div class="grid-4" style="margin-bottom:22px">
+    <div class="stat"><div class="stat-label">Total signalements</div><div class="stat-value" id="s-total">0</div><div class="stat-sub">Ce mois-ci</div></div>
+    <div class="stat"><div class="stat-label" style="color:#791F1F">Graves</div><div class="stat-value" id="s-grave" style="color:#A32D2D">0</div><div class="stat-sub">Action urgente requise</div></div>
+    <div class="stat"><div class="stat-label" style="color:#633806">Acceptables</div><div class="stat-value" id="s-accept" style="color:#854F0B">0</div><div class="stat-sub">En cours de traitement</div></div>
+    <div class="stat"><div class="stat-label" style="color:#27500A">Tolérables</div><div class="stat-value" id="s-tol" style="color:#3B6D11">0</div><div class="stat-sub">Sous surveillance</div></div>
+  </div>
+
+  <div class="card">
+    <div class="filter-bar">
+      <select id="fil-site" onchange="filterTable()">
+        <option value="">Tous les sites</option>
+        <option>ABIDJAN</option><option>ADIAKE</option><option>BOUAKE</option>
+        <option>BONDOUKOU</option><option>DALOA</option><option>DIMBOKRO</option>
+        <option>GAGNOA</option><option>KORHOGO</option><option>MAN</option>
+        <option>ODIENNE</option><option>SAN PEDRO</option><option>SASSANDRA</option>
+        <option>TABOU</option><option>YAMOUSSOUKRO</option>
+      </select>
+      <select id="fil-type" onchange="filterTable()">
+        <option value="">Toutes catégories</option>
+        <option>Infrastructure / Bâtiment</option>
+        <option>Installation technique</option>
+        <option>Équipement opérationnel</option>
+        <option>Incident de sécurité ou de sûreté</option>
+        <option>Non-conformité technique</option>
+        <option>Défaillance de maintenance</option>
+        <option>Accident / Incident</option>
+        <option>Documentation</option>
+      </select>
+      <select id="fil-grav" onchange="filterTable()">
+        <option value="">Tous niveaux</option>
+        <option value="grave">Grave</option>
+        <option value="acceptable">Acceptable</option>
+        <option value="tolerable">Tolérable</option>
+      </select>
+      <input type="text" id="fil-search" placeholder="🔍 Rechercher..." oninput="filterTable()" style="flex:2;min-width:200px">
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Réf.</th>
+            <th>Date / Heure</th>
+            <th>Site</th>
+            <th>Catégorie</th>
+            <th>Description</th>
+            <th>Gravité</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div id="table-empty" style="display:none;text-align:center;padding:40px;color:#888780;font-size:13px">
+      Aucun événement correspondant aux filtres sélectionnés.
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PAGE 3: BACK OFFICE ===================== -->
+<div class="page" id="page-backoffice">
+  <div class="section-hdr">
+    <div>
+      <div class="page-badge">Direction Conformité</div>
+      <div class="page-title">Tableau de bord analytique</div>
+      <div class="page-sub">Suivi automatique par site, par catégorie et notifications temps réel</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+      <button class="btn-export" onclick="window.print()">↓ Imprimer</button>
+    </div>
+  </div>
+
+  <div class="grid-4" style="margin-bottom:22px">
+    <div class="stat"><div class="stat-label">Sites actifs</div><div class="stat-value">14</div><div class="stat-sub">Toutes plateformes</div></div>
+    <div class="stat"><div class="stat-label">Événements ce mois</div><div class="stat-value" id="bo-total">0</div><div class="stat-sub">Tous sites confondus</div></div>
+    <div class="stat"><div class="stat-label" style="color:#791F1F">Graves non résolus</div><div class="stat-value" id="bo-grave" style="color:#A32D2D">0</div><div class="stat-sub">Action requise</div></div>
+    <div class="stat"><div class="stat-label" style="color:#27500A">Taux de clôture</div><div class="stat-value" style="color:#3B6D11">81%</div><div class="stat-sub">Objectif &gt; 85%</div></div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="boTab(this,'bo-sites')">Par site / Plateforme</button>
+    <button class="tab-btn" onclick="boTab(this,'bo-cats')">Par catégorie</button>
+    <button class="tab-btn" onclick="boTab(this,'bo-notifs')">Notifications temps réel</button>
+  </div>
+
+  <!-- SITES -->
+  <div id="bo-sites">
+    <div class="site-grid" id="site-grid"></div>
+  </div>
+
+  <!-- CATÉGORIES -->
+  <div id="bo-cats" style="display:none">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Répartition par catégorie d'événement</div>
+        <div id="cat-bars"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Répartition par niveau de gravité</div>
+        <div id="grav-bars"></div>
+        <div style="margin-top:24px">
+          <div class="card-title" style="margin-bottom:12px">Tendance mensuelle — Volume de signalements</div>
+          <div class="chart-wrap">
+            <canvas id="trend-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Tableau croisé — Catégorie × Site (top 6)</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Catégorie</th><th>ABIDJAN</th><th>BOUAKE</th><th>KORHOGO</th><th>DALOA</th><th>YAMOUSSOUKRO</th><th>Autres sites</th><th>Total</th></tr>
+          </thead>
+          <tbody id="cross-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div id="bo-notifs" style="display:none">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          Flux de notifications
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#5F5E5A;font-weight:400;text-transform:none;letter-spacing:0"><span class="live-dot"></span>Temps réel</span>
+        </div>
+        <div id="notif-feed"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Alertes prioritaires — Événements graves</div>
+        <div id="priority-list"></div>
+        <div id="no-priority" style="display:none;text-align:center;padding:30px;color:#3B6D11;font-size:13px;font-weight:500">
+          ✓ Aucune alerte grave en attente
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DÉTAIL -->
+<div class="modal-bg" id="detail-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Détail de l'événement</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Fermer</button>
+      <button class="btn btn-primary" onclick="markResolved()">✓ Marquer comme traité</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="white" stroke-width="1.2"/><path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const SITES=['ABIDJAN','ADIAKE','BOUAKE','BONDOUKOU','DALOA','DIMBOKRO','GAGNOA','KORHOGO','MAN','ODIENNE','SAN PEDRO','SASSANDRA','TABOU','YAMOUSSOUKRO'];
+const CATS=['Infrastructure / Bâtiment','Installation technique','Équipement opérationnel','Incident de sécurité ou de sûreté','Non-conformité technique','Défaillance de maintenance','Accident / Incident','Documentation'];
+const CAT_COLORS=['#185FA5','#0F6E56','#854F0B','#A32D2D','#534AB7','#3C3489','#993C1D','#5F5E5A'];
+const SEV_COLORS={grave:'#E24B4A',acceptable:'#EF9F27',tolerable:'#639922'};
+
+let events=[
+  {id:'SYR-001',date:'2025-04-18',heure:'09:15',site:'ABIDJAN',type:'Incident de sécurité ou de sûreté',lieu:'Entrée principale — Poste de garde',service:'Direction Sécurité',desc:'Tentative d\'intrusion détectée au poste de garde principal. Un individu non identifié a tenté de forcer l\'accès à l\'aide d\'un badge volé.',impact:'Risque d\'accès non autorisé aux équipements sensibles et aux données',causes:'Défaillance du système de contrôle d\'accès par badge',mesures:'Alerte sécurité déclenchée, individu interpellé par les agents de sûreté',gravite:'grave'},
+  {id:'SYR-002',date:'2025-04-17',heure:'14:30',site:'BOUAKE',type:'Équipement opérationnel',lieu:'Station météo nord — Tour anémométrique',service:'Service Météorologie',desc:'Anémomètre principal défaillant depuis 48h. Les données de vitesse du vent transmises sont erronées (valeurs aberrantes entre -5 et 200 km/h).',impact:'Données météorologiques non fiables pouvant affecter les bulletins et alertes',causes:'Usure mécanique du capteur de rotation, roulement bloqué',mesures:'Incident signalé à l\'équipe de maintenance, données masquées dans le système',gravite:'acceptable'},
+  {id:'SYR-003',date:'2025-04-16',heure:'11:00',site:'KORHOGO',type:'Infrastructure / Bâtiment',lieu:'Toiture bâtiment B — Salle des archives',service:'Service Maintenance',desc:'Infiltration d\'eau importante détectée dans la salle des archives suite aux pluies de la nuit. Plafond endommagé sur une surface d\'environ 4 m².',impact:'Risque de destruction de documents d\'archives et de matériel électronique',causes:'Détérioration de la membrane étanche de la toiture, gouttière bouchée',mesures:'Bâche plastique posée en urgence, documents sensibles déplacés',gravite:'grave'},
+  {id:'SYR-004',date:'2025-04-15',heure:'08:45',site:'DALOA',type:'Défaillance de maintenance',lieu:'Local technique — Salle groupe électrogène',service:'Service Technique',desc:'Le groupe électrogène de secours n\'a pas démarré lors du test mensuel de bon fonctionnement. Troisième échec consécutif.',impact:'Risque de coupure d\'alimentation totale non couverte lors d\'une panne secteur',causes:'Défaut de carburant (jauge défectueuse), batterie de démarrage déchargée',mesures:'Ravitaillement en carburant effectué, batterie rechargée, test relancé avec succès',gravite:'acceptable'},
+  {id:'SYR-005',date:'2025-04-14',heure:'16:20',site:'YAMOUSSOUKRO',type:'Documentation',lieu:'Bureau administratif — Poste de garde',service:'Administration',desc:'Le cahier de main courante obligatoire n\'a pas été tenu depuis 3 jours ouvrés. Les feuilles de présence des agents ne sont pas signées.',impact:'Traçabilité des incidents journaliers compromise, non-conformité aux procédures internes',causes:'Absence du responsable de poste, procédure de remplacement non activée',mesures:'Instruction donnée au chef de poste, procédure d\'urgence mise en place',gravite:'tolerable'},
+  {id:'SYR-006',date:'2025-04-13',heure:'10:00',site:'MAN',type:'Installation technique',lieu:'Local climatisation — Salle serveurs',service:'Informatique / Technique',desc:'Panne du climatiseur principal de la salle serveurs. Température mesurée : 31°C et montante. Seuil critique à 35°C.',impact:'Risque immédiat de surchauffe et d\'endommagement des équipements informatiques actifs',causes:'Compresseur principal défectueux suite à une surtension électrique',mesures:'Ventilateurs d\'appoint installés, technicien climatisation convoqué en urgence',gravite:'grave'},
+  {id:'SYR-007',date:'2025-04-12',heure:'13:30',site:'SASSANDRA',type:'Non-conformité technique',lieu:'Station côtière — Abri météorologique',service:'Observation météorologique',desc:'Capteur de pression atmosphérique non étalonné. Date d\'étalonnage dépassée depuis 6 semaines. Écart mesuré de +2,3 hPa par rapport à l\'étalon.',impact:'Non-conformité aux normes OMM, données de pression non certifiables pour les bulletins officiels',causes:'Oubli de planification de l\'étalonnage annuel obligatoire',mesures:'Étalonnage urgent planifié pour la semaine suivante, données flaggées en attente',gravite:'acceptable'},
+  {id:'SYR-008',date:'2025-04-11',heure:'07:30',site:'GAGNOA',type:'Accident / Incident',lieu:'Parking extérieur — Zone de manœuvre',service:'Logistique / Transport',desc:'Véhicule de service (Toyota HiLux immatriculé CI-XXXX-A) impliqué dans un accrochage mineur contre un pilier lors d\'une manœuvre de marche arrière.',impact:'Véhicule immobilisé temporairement (feu arrière brisé, pare-choc endommagé), aucun blessé',causes:'Manœuvre inadaptée en espace restreint, absence de signal sonore de recul',mesures:'Rapport d\'accident établi, véhicule envoyé au garage agréé pour réparation',gravite:'tolerable'},
+  {id:'SYR-009',date:'2025-04-10',heure:'15:00',site:'ABIDJAN',type:'Infrastructure / Bâtiment',lieu:'Périmètre nord — Clôture sécuritaire',service:'Direction Sécurité',desc:'Section de clôture métallique effondrée sur 3 mètres linéaires. Les poteaux de fondation présentent une corrosion avancée.',impact:'Brèche sécuritaire permettant un accès non contrôlé au site depuis la voie publique',causes:'Corrosion avancée des poteaux métalliques par exposition prolongée, manque d\'entretien',mesures:'Gardiennage renforcé sur le secteur, devis de réparation demandé en urgence',gravite:'grave'},
+  {id:'SYR-010',date:'2025-04-09',heure:'11:45',site:'TABOU',type:'Équipement opérationnel',lieu:'Pluviomètre automatique — Station côtière',service:'Hydrologie',desc:'Pluviomètre automatique obstrué, aucune donnée enregistrée depuis 5 jours consécutifs. L\'orifice de collecte est entièrement bouché.',impact:'Lacune importante dans les mesures pluviométriques de la région côtière',causes:'Accumulation de débris végétaux (feuilles, brindilles) dans l\'entonnoir collecteur',mesures:'Nettoyage complet effectué le jour même, données manquantes signalées au centre',gravite:'acceptable'},
+];
+
+let filteredEvents=[...events];
+let idCounter=11;
+let currentDetailId=null;
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+function showPage(p,btn){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(p==='suivi'){renderTable();updateStats();}
+  if(p==='backoffice'){renderBackoffice();updateBoStats();}
+}
+
+// ─── FORM ─────────────────────────────────────────────────────────────────────
+function resetForm(){
+  ['f-site','f-type','f-date','f-heure','f-lieu','f-service','f-desc','f-impact','f-causes','f-mesures'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  document.querySelectorAll('input[name=gravite]').forEach(r=>r.checked=false);
+  document.getElementById('file-name').style.display='none';
+  const today=new Date().toISOString().split('T')[0];
+  const now=new Date().toTimeString().slice(0,5);
+  document.getElementById('f-date').value=today;
+  document.getElementById('f-heure').value=now;
+}
+
+function showFile(input){
+  const fn=document.getElementById('file-name');
+  const ft=document.getElementById('file-name-text');
+  if(input.files[0]){fn.style.display='block';ft.textContent=input.files[0].name;}
+  else{fn.style.display='none';}
+}
+
+function submitEvent(){
+  const site=document.getElementById('f-site').value;
+  const type=document.getElementById('f-type').value;
+  const date=document.getElementById('f-date').value;
+  const heure=document.getElementById('f-heure').value;
+  const lieu=document.getElementById('f-lieu').value;
+  const desc=document.getElementById('f-desc').value;
+  const grav=document.querySelector('input[name=gravite]:checked');
+  if(!site||!type||!date||!lieu||!desc||!grav){
+    alert('⚠️ Veuillez remplir tous les champs obligatoires (*) avant de soumettre.');return;
+  }
+  const num=String(idCounter++).padStart(3,'0');
+  const ev={
+    id:'SYR-'+num,date,heure:heure||'—',site,type,lieu,
+    service:document.getElementById('f-service').value||'Non renseigné',
+    desc,
+    impact:document.getElementById('f-impact').value||'Non renseigné',
+    causes:document.getElementById('f-causes').value||'Non renseigné',
+    mesures:document.getElementById('f-mesures').value||'Aucune mesure immédiate prise',
+    gravite:grav.value
+  };
+  events.unshift(ev);
+  filteredEvents=[...events];
+  resetForm();
+  showToast('Signalement '+ev.id+' soumis avec succès !');
+}
+
+// ─── TABLE ────────────────────────────────────────────────────────────────────
+function renderTable(){
+  const tbody=document.getElementById('table-body');
+  tbody.innerHTML='';
+  const empty=document.getElementById('table-empty');
+  if(filteredEvents.length===0){empty.style.display='block';return;}
+  empty.style.display='none';
+  filteredEvents.forEach(ev=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><span class="ref-pill">${ev.id}</span></td>
+      <td style="white-space:nowrap">${ev.date}<br><span style="font-size:11px;color:#888780">${ev.heure}</span></td>
+      <td style="font-weight:600;white-space:nowrap">${ev.site}</td>
+      <td><span class="cat-badge">${ev.type}</span></td>
+      <td style="max-width:240px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ev.desc}</div></td>
+      <td><span class="sev ${ev.gravite}">${cap(ev.gravite)}</span></td>
+      <td><button class="link-btn" onclick="showDetail('${ev.id}')">Voir détail</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  updateStats();
+}
+
+function updateStats(){
+  const g=events.filter(e=>e.gravite==='grave').length;
+  const a=events.filter(e=>e.gravite==='acceptable').length;
+  const t=events.filter(e=>e.gravite==='tolerable').length;
+  document.getElementById('s-total').textContent=events.length;
+  document.getElementById('s-grave').textContent=g;
+  document.getElementById('s-accept').textContent=a;
+  document.getElementById('s-tol').textContent=t;
+}
+
+function filterTable(){
+  const site=document.getElementById('fil-site').value;
+  const type=document.getElementById('fil-type').value;
+  const grav=document.getElementById('fil-grav').value;
+  const search=document.getElementById('fil-search').value.toLowerCase();
+  filteredEvents=events.filter(ev=>
+    (!site||ev.site===site)&&(!type||ev.type===type)&&(!grav||ev.gravite===grav)&&
+    (!search||ev.desc.toLowerCase().includes(search)||ev.site.toLowerCase().includes(search)||ev.id.toLowerCase().includes(search)||ev.type.toLowerCase().includes(search))
+  );
+  renderTable();
+}
+
+function showDetail(id){
+  const ev=events.find(e=>e.id===id);
+  if(!ev)return;
+  currentDetailId=id;
+  document.getElementById('modal-title').innerHTML=`<span class="ref-pill" style="font-size:13px">${ev.id}</span>&nbsp;&nbsp;${ev.type}`;
+  document.getElementById('modal-body').innerHTML=`
+    <div class="detail-row"><div class="detail-key">Site / Plateforme</div><div class="detail-val" style="font-weight:700">${ev.site}</div></div>
+    <div class="detail-row"><div class="detail-key">Date & heure</div><div class="detail-val">${ev.date} à ${ev.heure}</div></div>
+    <div class="detail-row"><div class="detail-key">Catégorie</div><div class="detail-val"><span class="cat-badge">${ev.type}</span></div></div>
+    <div class="detail-row"><div class="detail-key">Localisation</div><div class="detail-val">${ev.lieu}</div></div>
+    <div class="detail-row"><div class="detail-key">Service concerné</div><div class="detail-val">${ev.service}</div></div>
+    <div class="detail-row"><div class="detail-key">Description</div><div class="detail-val" style="line-height:1.6">${ev.desc}</div></div>
+    <div class="detail-row"><div class="detail-key">Impact</div><div class="detail-val" style="line-height:1.6">${ev.impact}</div></div>
+    <div class="detail-row"><div class="detail-key">Causes probables</div><div class="detail-val" style="line-height:1.6">${ev.causes}</div></div>
+    <div class="detail-row"><div class="detail-key">Mesures prises</div><div class="detail-val" style="line-height:1.6">${ev.mesures}</div></div>
+    <div class="detail-row"><div class="detail-key">Niveau de gravité</div><div class="detail-val"><span class="sev ${ev.gravite}">${cap(ev.gravite)}</span></div></div>
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function closeModal(){document.getElementById('detail-modal').classList.remove('open');}
+function markResolved(){
+  if(currentDetailId){
+    events=events.filter(e=>e.id!==currentDetailId);
+    filteredEvents=filteredEvents.filter(e=>e.id!==currentDetailId);
+    renderTable();
+    showToast('Événement '+currentDetailId+' marqué comme traité et archivé.');
+    closeModal();
+    currentDetailId=null;
+  }
+}
+
+// ─── BACKOFFICE ───────────────────────────────────────────────────────────────
+function updateBoStats(){
+  document.getElementById('bo-total').textContent=events.length;
+  document.getElementById('bo-grave').textContent=events.filter(e=>e.gravite==='grave').length;
+}
+
+const SITE_COUNTS={ABIDJAN:8,ADIAKE:1,BOUAKE:5,BONDOUKOU:2,DALOA:4,DIMBOKRO:1,GAGNOA:3,KORHOGO:5,MAN:4,ODIENNE:2,'SAN PEDRO':3,SASSANDRA:3,TABOU:3,YAMOUSSOUKRO:3};
+const SITE_GRAVE={ABIDJAN:3,ADIAKE:0,BOUAKE:1,BONDOUKOU:0,DALOA:1,DIMBOKRO:0,GAGNOA:0,KORHOGO:2,MAN:1,ODIENNE:0,'SAN PEDRO':0,SASSANDRA:0,TABOU:1,YAMOUSSOUKRO:0};
+
+function renderBackoffice(){
+  updateBoStats();
+  const grid=document.getElementById('site-grid');
+  grid.innerHTML='';
+  const vals=Object.values(SITE_COUNTS);
+  const max=Math.max(...vals);
+  SITES.forEach(s=>{
+    const cnt=SITE_COUNTS[s]||0;
+    const grv=SITE_GRAVE[s]||0;
+    const pct=Math.round((cnt/max)*100);
+    const col=grv>1?'#E24B4A':grv===1?'#EF9F27':'#639922';
+    const card=document.createElement('div');
+    card.className='site-card';
+    card.onclick=()=>{
+      document.getElementById('fil-site').value=s;
+      showPage('suivi',document.querySelector('.nav-tab:nth-child(2)'));
+      document.querySelectorAll('.nav-tab').forEach((t,i)=>{t.classList.remove('active');if(i===1)t.classList.add('active');});
+      filterTable();
+    };
+    card.innerHTML=`
+      <div class="site-name">${s}</div>
+      <div class="site-count" style="color:${col}">${cnt}</div>
+      <div class="site-sub">${grv>0?grv+' événement'+(grv>1?'s':'')+ ' grave'+(grv>1?'s':''):'Aucun grave'}</div>
+      <div class="site-bar"><div class="site-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+const CAT_COUNTS=[9,7,8,5,6,5,4,3];
+const MONTHS=['Oct','Nov','Déc','Jan','Fév','Mar','Avr'];
+const MONTH_DATA=[28,35,31,42,38,45,47];
+const CROSS=[
+  [3,1,2,1,1,1],[2,1,1,1,0,2],[2,1,1,1,1,2],[1,1,1,0,1,1],
+  [2,1,0,1,1,0],[1,0,1,0,0,3],[0,0,0,0,0,4],[1,0,0,0,0,2]
+];
+
+function renderCharts(){
+  // Cat bars
+  const cb=document.getElementById('cat-bars');
+  const maxC=Math.max(...CAT_COUNTS);
+  cb.innerHTML=CATS.map((c,i)=>`
+    <div class="bar-wrap">
+      <div class="bar-label"><span>${c}</span><span style="font-weight:700">${CAT_COUNTS[i]}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(CAT_COUNTS[i]/maxC*100)}%;background:${CAT_COLORS[i]}"></div></div>
+    </div>`).join('');
+
+  // Gravité bars
+  const total=47;
+  const gravData=[{l:'Grave',v:9,c:'#E24B4A',tc:'#791F1F'},{l:'Acceptable',v:23,c:'#EF9F27',tc:'#633806'},{l:'Tolérable',v:15,c:'#639922',tc:'#27500A'}];
+  document.getElementById('grav-bars').innerHTML=gravData.map(g=>`
+    <div class="bar-wrap">
+      <div class="bar-label"><span style="color:${g.tc};font-weight:600">${g.l}</span><span style="font-weight:700;color:${g.tc}">${g.v} (${Math.round(g.v/total*100)}%)</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(g.v/total*100)}%;background:${g.c}"></div></div>
+    </div>`).join('');
+
+  // Trend canvas
+  const canvas=document.getElementById('trend-chart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth*window.devicePixelRatio||600;
+  canvas.height=200*window.devicePixelRatio||200;
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+  const W=canvas.offsetWidth||600,H=200,pad=36,pts=MONTH_DATA;
+  const maxV=Math.max(...pts)+5;
+  const xs=pts.map((_,i)=>pad+(i*(W-2*pad)/(pts.length-1)));
+  const ys=pts.map(v=>H-pad-(v/maxV*(H-2*pad)));
+  // Grid lines
+  ctx.strokeStyle='#EDE9E3';ctx.lineWidth=1;
+  [0,25,50].forEach(v=>{
+    const y=H-pad-(v/maxV*(H-2*pad));
+    ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();
+    ctx.fillStyle='#888780';ctx.font='11px Segoe UI,Arial,sans-serif';ctx.textAlign='right';
+    ctx.fillText(v,pad-6,y+4);
+  });
+  // Area fill
+  ctx.beginPath();ctx.moveTo(xs[0],H-pad);
+  xs.forEach((x,i)=>ctx.lineTo(x,ys[i]));
+  ctx.lineTo(xs[xs.length-1],H-pad);ctx.closePath();
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(24,95,165,.25)');grad.addColorStop(1,'rgba(24,95,165,0)');
+  ctx.fillStyle=grad;ctx.fill();
+  // Line
+  ctx.beginPath();ctx.strokeStyle='#185FA5';ctx.lineWidth=2.5;ctx.lineJoin='round';
+  xs.forEach((x,i)=>i===0?ctx.moveTo(x,ys[i]):ctx.lineTo(x,ys[i]));ctx.stroke();
+  // Points + labels
+  xs.forEach((x,i)=>{
+    ctx.beginPath();ctx.arc(x,ys[i],5,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#185FA5';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#185FA5';ctx.font='bold 11px Segoe UI,Arial,sans-serif';ctx.textAlign='center';
+    ctx.fillText(pts[i],x,ys[i]-10);
+    ctx.fillStyle='#888780';ctx.font='11px Segoe UI,Arial,sans-serif';
+    ctx.fillText(MONTHS[i],x,H-10);
+  });
+
+  // Cross table
+  const ct=document.getElementById('cross-table');
+  ct.innerHTML=CATS.map((c,i)=>{
+    const row=CROSS[i];const tot=row.reduce((a,b)=>a+b,0);
+    return`<tr><td style="font-size:12px">${c}</td>${row.map(v=>`<td style="text-align:center;font-size:13px">${v||'—'}</td>`).join('')}<td style="text-align:center;font-weight:700;color:#185FA5">${tot}</td></tr>`;
+  }).join('');
+}
+
+const NOTIFS=[
+  {site:'ABIDJAN',desc:'Tentative d\'intrusion au poste de garde principal',gravite:'grave',time:'Il y a 2h',ref:'SYR-001'},
+  {site:'KORHOGO',desc:'Infiltration d\'eau salle des archives, bâtiment B',gravite:'grave',time:'Il y a 6h',ref:'SYR-003'},
+  {site:'MAN',desc:'Climatiseur salle serveurs en panne — T°: 31°C',gravite:'grave',time:'Il y a 8h',ref:'SYR-006'},
+  {site:'ABIDJAN',desc:'Section de clôture nord effondrée sur 3m',gravite:'grave',time:'Il y a 1j',ref:'SYR-009'},
+  {site:'BOUAKE',desc:'Anémomètre défaillant, données erronées depuis 48h',gravite:'acceptable',time:'Il y a 1j',ref:'SYR-002'},
+  {site:'DALOA',desc:'Groupe électrogène non démarré au test mensuel',gravite:'acceptable',time:'Il y a 2j',ref:'SYR-004'},
+  {site:'SASSANDRA',desc:'Capteur pression hors étalonnage depuis 6 semaines',gravite:'acceptable',time:'Il y a 3j',ref:'SYR-007'},
+  {site:'TABOU',desc:'Pluviomètre obstrué, aucune donnée depuis 5 jours',gravite:'acceptable',time:'Il y a 3j',ref:'SYR-010'},
+  {site:'YAMOUSSOUKRO',desc:'Cahier de main courante non tenu depuis 3 jours',gravite:'tolerable',time:'Il y a 4j',ref:'SYR-005'},
+  {site:'GAGNOA',desc:'Accrochage mineur véhicule de service au parking',gravite:'tolerable',time:'Il y a 4j',ref:'SYR-008'},
+];
+
+function renderNotifs(){
+  const feed=document.getElementById('notif-feed');
+  feed.innerHTML=NOTIFS.map(n=>`
+    <div class="notif">
+      <div class="notif-dot ${n.gravite}"></div>
+      <div style="flex:1">
+        <div class="notif-title">${n.desc}</div>
+        <div class="notif-meta">
+          <strong>${n.site}</strong>
+          <span class="sev ${n.gravite}" style="font-size:10px">${cap(n.gravite)}</span>
+          <span>${n.time}</span>
+          <span class="ref-pill">${n.ref}</span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  const prior=document.getElementById('priority-list');
+  const graves=NOTIFS.filter(n=>n.gravite==='grave');
+  if(graves.length===0){document.getElementById('no-priority').style.display='block';prior.innerHTML='';return;}
+  document.getElementById('no-priority').style.display='none';
+  prior.innerHTML=graves.map(n=>`
+    <div class="alert-grave" id="alert-${n.ref}">
+      <div class="alert-title">🔴 ${n.desc}</div>
+      <div class="alert-meta">${n.site} · ${n.time} · <span class="ref-pill">${n.ref}</span></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('alert-${n.ref}').remove();checkNoAlerts()">✓ Prendre en charge</button>
+        <button class="btn btn-ghost btn-sm" onclick="showDetail('${n.ref}');showPage('suivi')">Voir détail</button>
+      </div>
+    </div>`).join('');
+}
+
+function checkNoAlerts(){
+  if(!document.querySelector('.alert-grave'))
+    document.getElementById('no-priority').style.display='block';
+}
+
+function boTab(btn,tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['bo-sites','bo-cats','bo-notifs'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById(tab).style.display='block';
+  if(tab==='bo-cats')setTimeout(renderCharts,50);
+  if(tab==='bo-notifs')renderNotifs();
+}
+
+// ─── EXPORT CSV ───────────────────────────────────────────────────────────────
+function exportCSV(){
+  const headers=['Référence','Date','Heure','Site','Catégorie','Localisation','Service','Description','Impact','Causes','Mesures','Gravité'];
+  const rows=events.map(e=>[e.id,e.date,e.heure,e.site,e.type,e.lieu,e.service,'"'+e.desc.replace(/"/g,'""')+'"','"'+e.impact.replace(/"/g,'""')+'"','"'+e.causes.replace(/"/g,'""')+'"','"'+e.mesures.replace(/"/g,'""')+'"',e.gravite]);
+  const csv='data:text/csv;charset=utf-8,\uFEFF'+headers.join(';')+'\n'+rows.map(r=>r.join(';')).join('\n');
+  const a=document.createElement('a');a.href=encodeURI(csv);
+  a.download='SYRENES_Export_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+(function init(){
+  const today=new Date().toISOString().split('T')[0];
+  const now=new Date().toTimeString().slice(0,5);
+  document.getElementById('f-date').value=today;
+  document.getElementById('f-heure').value=now;
+  updateStats();
+})();
+</script>
+</body>
+</html>
